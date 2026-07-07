@@ -368,7 +368,7 @@ class Component extends DCLogic {
     const gmap={};
     (s.plans||[]).forEach(p=>{ if(q && p.title.toLowerCase().indexOf(q)<0) return; const lbl=this._dayLabel(p.mtimeMs); (gmap[lbl]=gmap[lbl]||[]).push(p); });
     const groups=Object.keys(gmap).sort((a,b)=>order[a]-order[b]).map(lbl=>{
-      const items=gmap[lbl].map(p=>{ const active=p.slug===s.activeSlug; return { id:p.slug, title:p.title, meta:(p.status?p.status+' · ':'')+'edited '+this._timeLabel(p.mtimeMs), ver:(p.status||'md'), onClick:()=>this.selectPlan(p.slug), bg:active?'var(--active)':'transparent', bd:active?'var(--border)':'1px solid transparent', dot:active?'var(--green)':'var(--fainter)', tcol:active?'var(--text)':'var(--dim)', tw:active?'600':'400', showVersions:false }; });
+      const items=gmap[lbl].map(p=>{ const active=p.slug===s.activeSlug; return { id:p.slug, title:p.title, meta:(p.status?p.status+' · ':'')+'edited '+this._timeLabel(p.mtimeMs), ver:(p.status?p.status.split(/[\s—-]/)[0]:'md'), onClick:()=>this.selectPlan(p.slug), bg:active?'var(--active)':'transparent', bd:active?'var(--border)':'1px solid transparent', dot:active?'var(--green)':'var(--fainter)', tcol:active?'var(--text)':'var(--dim)', tw:active?'600':'400', showVersions:false }; });
       return {label:lbl, count:items.length, items};
     });
     const planCount=(s.plans||[]).length;
