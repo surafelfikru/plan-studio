@@ -1,0 +1,8 @@
+{
+  "name": "plan-studio",
+  "version": "0.1.0",
+  "description": "Local browser planning environment: renders Claude Code plans richly, with editing, diagrams, GitHub diffs, live code refs, and a separate-model side chat.",
+  "commands": ["./commands/plan-studio.md"],
+  "hooks": "./hooks/hooks.json",
+  "skills": ["./skills/plan-studio"]
+}

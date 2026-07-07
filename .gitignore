@@ -1,0 +1,11 @@
+node_modules/
+bun.lockb
+
+# runtime chat-thread data (personal plan content — never publish)
+threads/*
+!threads/.gitkeep
+
+*.log
+.DS_Store
+.env
+.env.*
