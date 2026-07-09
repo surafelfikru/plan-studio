@@ -5,9 +5,15 @@
 //   - Write/Edit to ~/.claude/plans/*.md -> open that specific plan
 // Stays silent and non-blocking otherwise; never interrupts the main session.
 import { basename } from "node:path";
-import { PLANS_DIR } from "../lib/config.ts";
-import { listPlans } from "../lib/plans.ts";
-import { launch } from "./launch.ts";
+import { PLANS_DIR } from "../lib/config";
+import { listPlans } from "../lib/plans";
+import { launch } from "./launch";
+
+async function readStdin(): Promise<string> {
+  const chunks: Buffer[] = [];
+  for await (const chunk of process.stdin) chunks.push(chunk as Buffer);
+  return Buffer.concat(chunks).toString("utf8");
+}
 
 async function resolveSlug(payload: any): Promise<string | undefined> {
   const filePath: string | undefined =
@@ -29,7 +35,7 @@ async function resolveSlug(payload: any): Promise<string | undefined> {
 async function main() {
   let raw = "";
   try {
-    raw = await Bun.stdin.text();
+    raw = await readStdin();
   } catch {
     return;
   }

@@ -1,11 +1,12 @@
 #!/usr/bin/env bun
-// Shared launcher: ensure the Plan Studio server is running, then (optionally)
+// Shared launcher: ensure the Plan Studio dev server is running, then (optionally)
 // open the browser to a given plan slug — at most once per slug per boot.
 import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { setTimeout as sleep } from "node:timers/promises";
 import { tmpdir } from "node:os";
-import { HOST, PORT, APP_DIR } from "../lib/config.ts";
+import { HOST, PORT, APP_DIR } from "../lib/config";
 
 const BASE = `http://${HOST}:${PORT}`;
 const MARKER_DIR = join(tmpdir(), "plan-studio-opened");
@@ -23,15 +24,16 @@ async function isUp(): Promise<boolean> {
 
 async function ensureServer(): Promise<void> {
   if (await isUp()) return;
-  const child = spawn("bun", ["run", join(APP_DIR, "server.ts")], {
+  const child = spawn("bun", ["run", "dev"], {
     cwd: APP_DIR,
     detached: true,
     stdio: "ignore",
   });
   child.unref();
-  // wait up to ~5s for it to come up
-  for (let i = 0; i < 25; i++) {
-    await Bun.sleep(200);
+  // wait up to ~30s: Next.js compiles routes on demand, so the first request
+  // after a cold start can take several seconds.
+  for (let i = 0; i < 150; i++) {
+    await sleep(200);
     if (await isUp()) return;
   }
 }

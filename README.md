@@ -4,60 +4,45 @@ Local browser planning environment for Claude Code. Renders plans from
 `~/.claude/plans/*.md` richly (diagrams, GitHub diffs, live code refs), lets you
 edit any section, and gives you a separate-model side chat — all local.
 
+Built with **Next.js (App Router) + React + TypeScript + Tailwind CSS**, on Bun.
+
 ## Run
 
 ```bash
-bun run /home/sura/.claude/plan-studio/server.ts   # http://127.0.0.1:4317
+bun install
+bun run dev   # http://127.0.0.1:4317
 ```
 
 Or just write/finish a plan: a `PreToolUse` hook on `ExitPlanMode` ensures the
-server is up and opens the browser to the new plan. Manual open: `/plan-studio [slug]`.
+dev server is up and opens the browser to the new plan. Manual open: `/plan-studio [slug]`.
 
 ## Architecture
 
-- `server.ts` — bun HTTP + SSE, static UI from `public/`.
+- `app/page.tsx` — the three-column shell (sidebar / doc+TOC / chat), a client component wiring hooks to UI.
+- `app/api/*/route.ts` — route handlers: `plans`, `plans/[slug]`, `file`, `events` (SSE), `chat/[slug]` (SSE), `threads/[slug]`.
+- `app/globals.css` — Tailwind + the design tokens (`--bg`, `--panel`, `--text`, …), keyed off a `.light` class on `<html>` rather than `prefers-color-scheme`.
 - `lib/plans.ts` — list/read/write plans + frontmatter; optimistic-concurrency via content hash.
 - `lib/fileread.ts` — **realpath-jailed** read-only file slices for `code-ref` blocks.
 - `lib/watch.ts` — `fs.watch` → SSE live reload.
 - `lib/chat.ts` — side chat via headless `claude -p --model claude-haiku-4-5` (reuses your login; tools disabled).
 - `lib/threads.ts` — chat thread persistence under `threads/`.
-- `bin/launch.ts` / `bin/on-plan-write.ts` — server launcher + hook target.
+- `lib/markdown.ts` — pure plan-body parser (sections, fenced `mermaid`/`plan-diff`/`code-ref`/`callout`/`resource` blocks); unit-tested in `lib/markdown.test.ts` (`bun test`).
+- `hooks/*` — one hook per concern: `usePlans`, `useDoc`, `useChat`, `useSelection`, `useTheme`, `useResizable`, `useLiveReload`, `useMermaid`, `useCodeRefs`, `useDiff`, `useMarkdown`, `useToast`.
+- `components/*` — presentational components consuming those hooks; `components/blocks/*` renders the six plan block types.
+- `bin/launch.ts` / `bin/on-plan-write.ts` — dev-server launcher + hook target.
 - `plugin/` — thin plugin (command, hook, `plan-studio` skill = the authoring contract).
 
-## UI ⇄ logic seam
+## UI
 
-| Path | Owner | Role |
-|------|-------|------|
-| `public/Plan Studio.dc.html` | **Claude Design** | The UI — `<style>` + markup, authored visually in Claude Design and shipped whole. Also hosts the dc component `<script>` region. |
-| `public/support.js` | vendor | dc-runtime React runtime. |
-| `public/_script.js` | **logic** | Canonical source for the dc component logic (`renderVals`, mermaid, chat, selection/tweaks, API). Kept in-repo so it survives UI re-imports; integrated into the `.dc.html` script region. |
-| `server.ts`, `lib/*`, `bin/*`, `plugin/*` | **logic** | Backend + tooling. |
+The UI is implemented directly in this codebase (React + Tailwind) — Claude Design
+may be used as a **visual reference** to draw from, but nothing is imported or
+pulled from it; there's no design-sync pipeline. Visual changes are ordinary
+code changes here.
 
-The UI is authored in **Claude Design**. Claude Code does **not** hand-edit the
-visual layer — it owns logic and wiring only. There is no splicer; the
-`_script.js` → `.dc.html` script-region integration is done directly.
+## Commits
 
-**One-way import loop:**
-1. You share a Claude Design link.
-2. Claude pulls the design's `Plan Studio.dc.html` → commits it as the UI baseline (`design:`).
-3. Claude integrates the maintained `_script.js`, refactors logic, wires new markup (`logic:`).
-4. Claude reports back any UI changes the design must make that logic can't cover.
-
-## Commit provenance
-
-So you can always trace and revert by origin:
-
-- **`design:` …** — authored `Claude Design <design@anthropic.com>`. Anything from the Claude Design file (style, markup).
-- **`logic:` …** — authored by the maintainer / Claude Code. Server, libs, component logic, tooling.
-
-```
-git log --author="Claude Design"   # everything the design shipped
-git log --author="Claude Code"      # everything logic-side
-git log --oneline                    # prefixes make the seam obvious
-```
-
-Because dc-runtime bundles style + markup + script in one file, the `.dc.html`
-is touched by both kinds of commit; `git blame` attributes each line to its origin.
+Plain [Conventional Commits](https://www.conventionalcommits.org/) —
+`feat`/`fix`/`refactor`/`chore`, scoped where useful (`feat(ui): …`, `fix(api): …`).
 
 ## API
 
