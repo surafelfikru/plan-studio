@@ -1,5 +1,5 @@
 import { watch } from "node:fs";
-import { PLANS_DIR } from "./config.ts";
+import { PLANS_DIR } from "./config";
 
 type Client = (event: string, data: unknown) => void;
 

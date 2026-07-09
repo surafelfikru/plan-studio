@@ -1,8 +1,8 @@
 import { readFile, writeFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
-import { THREADS_DIR } from "./config.ts";
-import { safeSlug } from "./plans.ts";
-import type { ChatMessage } from "./chat.ts";
+import { THREADS_DIR } from "./config";
+import { safeSlug } from "./plans";
+import type { ChatMessage } from "./chat";
 
 export interface Thread {
   id: string;

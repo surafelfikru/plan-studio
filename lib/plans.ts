@@ -1,7 +1,7 @@
 import { readdir, readFile, writeFile, stat } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { join } from "node:path";
-import { PLANS_DIR } from "./config.ts";
+import { PLANS_DIR } from "./config";
 
 export interface Frontmatter {
   title?: string;
@@ -42,14 +42,14 @@ export function parseFrontmatter(raw: string): {
   for (const line of block.split("\n")) {
     const m = line.match(/^([A-Za-z0-9_-]+):\s*(.*)$/);
     if (!m) continue;
-    let value = m[2].trim();
+    let value = m[2]!.trim();
     if (
       (value.startsWith('"') && value.endsWith('"')) ||
       (value.startsWith("'") && value.endsWith("'"))
     ) {
       value = value.slice(1, -1);
     }
-    frontmatter[m[1]] = value;
+    frontmatter[m[1]!] = value;
   }
   return { frontmatter, body };
 }
@@ -57,7 +57,7 @@ export function parseFrontmatter(raw: string): {
 function deriveTitle(frontmatter: Frontmatter, body: string): string {
   if (frontmatter.title) return frontmatter.title;
   const heading = body.match(/^#\s+(.+)$/m);
-  return heading ? heading[1].trim().replace(/`/g, "") : "(untitled plan)";
+  return heading ? heading[1]!.trim().replace(/`/g, "") : "(untitled plan)";
 }
 
 export function hashContent(content: string): string {

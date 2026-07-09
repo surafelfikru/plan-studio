@@ -1,4 +1,6 @@
-import { CHAT_MODEL, APP_DIR } from "./config.ts";
+import { spawn } from "node:child_process";
+import { once } from "node:events";
+import { CHAT_MODEL, APP_DIR } from "./config";
 
 export interface ChatMessage {
   role: "user" | "assistant";
@@ -33,12 +35,12 @@ function buildSystemPrompt(ctx: ChatContext): string {
 }
 
 function buildPrompt(messages: ChatMessage[]): string {
-  if (messages.length === 1) return messages[0].content;
+  if (messages.length === 1) return messages[0]!.content;
   const history = messages
     .slice(0, -1)
     .map((m) => `${m.role === "user" ? "User" : "Assistant"}: ${m.content}`)
     .join("\n\n");
-  const latest = messages[messages.length - 1].content;
+  const latest = messages[messages.length - 1]!.content;
   return `Conversation so far:\n\n${history}\n\nNow answer this latest user message:\n\n${latest}`;
 }
 
@@ -52,9 +54,9 @@ export async function runChatTurn(
   onDelta: (text: string) => void,
   signal?: AbortSignal,
 ): Promise<string> {
-  const proc = Bun.spawn(
+  const proc = spawn(
+    "claude",
     [
-      "claude",
       "-p",
       buildPrompt(messages),
       "--model",
@@ -70,11 +72,11 @@ export async function runChatTurn(
     ],
     {
       cwd: APP_DIR, // neutral cwd: no project CLAUDE.md leaks into the chat
-      stdout: "pipe",
-      stderr: "pipe",
+      stdio: ["ignore", "pipe", "pipe"],
       signal,
     },
   );
+  proc.stderr.on("data", () => {}); // drain so a chatty child can't block on a full pipe
 
   let full = "";
   let sawDelta = false;
@@ -110,7 +112,7 @@ export async function runChatTurn(
     }
   }
 
-  await proc.exited;
+  await once(proc, "exit");
 
   if (!sawDelta && resultText) {
     full = resultText;
